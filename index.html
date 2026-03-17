@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M5 Validator Telemetry and Health Scoring Framework</title>
+<style>
+  :root {
+    --navy: #0d1b2a;
+    --blue: #1b4f8a;
+    --accent: #2e7dbc;
+    --light-blue: #e8f1f8;
+    --green: #1a6b3c;
+    --light-green: #e8f5ee;
+    --red: #8b1a1a;
+    --light-red: #fdf0f0;
+    --amber: #7a4f00;
+    --light-amber: #fdf6e3;
+    --gray: #4a4a4a;
+    --light-gray: #f5f5f5;
+    --border: #d0d9e3;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--navy);
+    background: var(--white);
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+  }
+  .cover {
+    border-top: 6px solid var(--accent);
+    border-bottom: 2px solid var(--border);
+    padding: 48px 0 36px;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: var(--light-blue);
+    color: var(--blue);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    padding: 4px 12px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+  .cover h1 {
+    font-size: 26px;
+    font-weight: bold;
+    color: var(--navy);
+    line-height: 1.3;
+    margin-bottom: 12px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cover-sub { font-size: 14px; color: var(--gray); margin-bottom: 28px; }
+  .cover-meta {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    font-size: 12px;
+    color: var(--gray);
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .cover-meta span strong { color: var(--navy); }
+  .toc {
+    background: var(--light-gray);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px 28px;
+    margin-bottom: 48px;
+  }
+  .toc h2 {
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 14px;
+    font-family: sans-serif;
+  }
+  .toc ol { list-style: none; counter-reset: toc; }
+  .toc ol li {
+    counter-increment: toc;
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--gray);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .toc ol li::before {
+    content: counter(toc) ".";
+    font-weight: bold;
+    color: var(--accent);
+    min-width: 18px;
+    font-family: sans-serif;
+  }
+  .toc ol li a { color: var(--navy); text-decoration: none; }
+  .toc ol li a:hover { color: var(--accent); text-decoration: underline; }
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .section-num {
+    background: var(--accent);
+    color: var(--white);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 18px; color: var(--navy); line-height: 1.25; }
+  .subsection { margin-bottom: 28px; }
+  .subsection h3 {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--blue);
+    margin-bottom: 10px;
+    font-family: sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+  }
+  p { margin-bottom: 12px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  th {
+    background: var(--navy);
+    color: var(--white);
+    font-family: sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--light-gray); }
+  tr:last-child td { border-bottom: 2px solid var(--accent); }
+  code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: #eef2f7;
+    border: 1px solid #c8d8e8;
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--navy);
+  }
+  pre {
+    background: var(--navy);
+    color: #d0e4f4;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 16px 18px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .callout {
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .callout.info { background: var(--light-blue); border-left: 4px solid var(--accent); color: var(--blue); }
+  .callout.warning { background: var(--light-amber); border-left: 4px solid #e0a800; color: var(--amber); }
+  .callout.critical { background: var(--light-red); border-left: 4px solid var(--red); color: var(--red); }
+  .callout.success { background: var(--light-green); border-left: 4px solid var(--green); color: var(--green); }
+  .callout strong { display: block; margin-bottom: 4px; font-family: sans-serif; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tier {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 3px;
+    padding: 2px 8px;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+  }
+  .tier.healthy { background: #1a6b3c; color: white; }
+  .tier.degraded { background: #e67e22; color: white; }
+  .tier.critical { background: #c0392b; color: white; }
+  .tier.offline { background: #2c3e50; color: white; }
+  .flow { display: flex; flex-direction: column; gap: 0; margin-bottom: 20px; }
+  .flow-step { display: flex; align-items: stretch; gap: 0; }
+  .flow-connector { width: 40px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .flow-connector .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); margin-top: 18px; flex-shrink: 0; z-index: 1; }
+  .flow-connector .line { width: 2px; flex-grow: 1; background: var(--border); }
+  .flow-box { flex-grow: 1; border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; margin: 4px 0; background: var(--white); }
+  .flow-box h4 { font-family: sans-serif; font-size: 12px; font-weight: bold; color: var(--navy); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .flow-box p { font-size: 12px; color: var(--gray); margin: 0; }
+  .matrix { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+  .matrix-cell { border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; }
+  .matrix-cell h4 { font-family: sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
+  .matrix-cell ul { list-style: none; font-size: 12.5px; color: var(--gray); }
+  .matrix-cell ul li { padding: 2px 0; padding-left: 14px; position: relative; }
+  .matrix-cell ul li::before { content: "-"; position: absolute; left: 0; color: var(--accent); }
+  .score-bar-container { margin-bottom: 20px; }
+  .score-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; font-size: 12px; }
+  .score-bar-label { width: 80px; text-align: right; font-family: 'Courier New', monospace; color: var(--gray); }
+  .score-bar { height: 22px; border-radius: 3px; display: flex; align-items: center; padding-left: 8px; color: white; font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold; }
+  .score-bar.healthy { background: var(--green); }
+  .score-bar.degraded { background: #e67e22; }
+  .score-bar.critical { background: var(--red); }
+  .score-bar.offline { background: #2c3e50; }
+  .decay-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+  .decay-cell { border: 1px solid var(--border); border-radius: 4px; padding: 12px; text-align: center; }
+  .decay-cell .decay-time { font-family: 'Courier New', monospace; font-size: 18px; font-weight: bold; color: var(--accent); }
+  .decay-cell .decay-label { font-size: 11px; color: var(--gray); margin-top: 4px; font-family: sans-serif; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  .appendix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .appendix-card { border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 4px; padding: 14px; font-size: 12px; }
+  .appendix-card h4 { font-family: sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--blue); margin-bottom: 8px; }
+  .appendix-card p { color: var(--gray); margin: 0; }
+  .formula-block {
+    background: #f0f4f8;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+    padding: 14px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 2;
+  }
+  .formula-block .formula-title { font-family: sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--blue); margin-bottom: 8px; font-weight: bold; }
+  .footer {
+    margin-top: 60px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    font-size: 11px;
+    color: #888;
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">Post Fiat Superstructure Validator Platform</div>
+  <h1>M5 Validator Telemetry and Health Scoring Framework</h1>
+  <div class="cover-sub">Operational Monitoring and Automated Health Governance for Live Institutional Validator Infrastructure</div>
+  <div class="cover-meta">
+    <span><strong>Phase:</strong> M5: Live Validator Operations</span>
+    <span><strong>Classification:</strong> Operational Architecture Specification</span>
+    <span><strong>Version:</strong> 1.0, March 2026</span>
+    <span><strong>Alignment:</strong> Superstructure Validator Platform</span>
+  </div>
+</div>
+
+<!-- EXECUTIVE SUMMARY -->
+<div class="callout info">
+  <strong>Document Purpose</strong>
+  This specification defines the complete telemetry and health scoring framework for live Post Fiat Superstructure validator nodes. It establishes how health signals are collected, how they compose into a scored health state, how the Orchestration Control Plane responds to score-driven thresholds, and how degradation and recovery mechanics govern the escalation path from early warning through operator notification to slashing exposure. All scoring constants are forward-compatible with the Composite Routing Score (CRS) inputs defined in M3 and the security alerting thresholds defined in M5 Security Hardening. This document does not redefine CRS. It defines the health scoring layer that operates alongside CRS and feeds additional signal into OCP-triggered actions.
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">Telemetry Data Model and Ingestion Pipeline Architecture</a>: metric types, collection intervals, ingestion pipeline, storage schema</li>
+    <li><a href="#s2">Health Signal Taxonomy</a>: node layer, operator aggregate layer, network-wide layer with signal definitions and collection methods</li>
+    <li><a href="#s3">Scoring Logic and Threshold Definitions</a>: composite health score calculation, tier thresholds, automated assessment rules</li>
+    <li><a href="#s4">OCP Integration for Score-Triggered Actions</a>: action-to-score mapping, alerting, rerouting, capacity scaling, pre-slashing warnings</li>
+    <li><a href="#s5">Degradation Curves, Escalation Paths, and Recovery Mechanics</a>: decay functions, escalation sequence, restoration windows</li>
+  </ol>
+</div>
+
+<!-- SECTION 1 -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>Telemetry Data Model and Ingestion Pipeline Architecture</h2>
+  </div>
+
+  <p>The telemetry data model defines all metric types emitted by validator nodes and the pipeline that carries them into the OCP health scoring engine. Telemetry is the foundational input to every downstream scoring, alerting, and routing decision. The model is designed to be validator-agnostic at the transport layer while remaining semantically rich enough to distinguish between node-level, operator-level, and network-level health degradation.</p>
+
+  <div class="subsection">
+    <h3>1.1 Metric Types and Collection Intervals</h3>
+    <p>Metrics fall into four categories based on their update frequency and semantic role. Collection interval is the maximum age a metric value may have before the OCP health engine treats it as stale and applies the staleness penalty to the composite health score.</p>
+    <table>
+      <tr><th>Category</th><th>Metric Type</th><th>Collection Interval</th><th>Transport Priority</th><th>Staleness Threshold</th></tr>
+      <tr>
+        <td>Liveness</td>
+        <td>Heartbeat signal, slot participation confirmation, ceremony envelope receipt acknowledgment</td>
+        <td>30 seconds</td>
+        <td>High: dropped packets trigger immediate gap detection</td>
+        <td>90 seconds (3 missed cycles); matches M3 failover trigger</td>
+      </tr>
+      <tr>
+        <td>Performance</td>
+        <td>p95 signing latency (ms), p99 signing latency (ms), block proposal success rate, attestation inclusion rate</td>
+        <td>60 seconds</td>
+        <td>Medium: batched per scoring cycle</td>
+        <td>120 seconds (2 missed cycles)</td>
+      </tr>
+      <tr>
+        <td>Resource</td>
+        <td>CPU utilization (%), memory utilization (%), disk I/O wait (ms), network egress bandwidth (Mbps)</td>
+        <td>60 seconds</td>
+        <td>Medium: batched per scoring cycle</td>
+        <td>120 seconds</td>
+      </tr>
+      <tr>
+        <td>Security</td>
+        <td>Binary integrity check result (pass/fail), configuration hash delta, failed authentication attempts (count/interval), nonce log depth (entries)</td>
+        <td>300 seconds (integrity check); 30 seconds (auth failures)</td>
+        <td>High for auth failures; Low for integrity checks (already handled by M5 Security Hardening alerting)</td>
+        <td>360 seconds for integrity checks; 90 seconds for auth failure counters</td>
+      </tr>
+      <tr>
+        <td>Ceremony</td>
+        <td>Active ceremony count, pending envelope queue depth, ceremony completion latency (ms), ceremony failure reason code</td>
+        <td>30 seconds</td>
+        <td>High: ceremony state is latency-sensitive</td>
+        <td>90 seconds</td>
+      </tr>
+    </table>
+    <div class="callout info">
+      <strong>Relationship to CRS Inputs</strong>
+      The Composite Routing Score (CRS) defined in M3 uses four inputs: Verified Inference score (40%), uptime rate 24h (30%), p95 latency (20%), and telemetry freshness (10%). The health scoring framework defined here uses a broader signal set. CRS continues to govern routing weight allocation. The health score governs tier classification and OCP action triggers. Both systems read from the same telemetry stream but apply different aggregation and weighting logic. A validator can hold a high CRS while showing early degradation signals in the health score, which is by design: health scoring catches problems before they become severe enough to affect CRS routing weight.
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>1.2 Ingestion Pipeline Architecture</h3>
+    <p>Telemetry flows from validator nodes through a four-stage pipeline into the OCP health scoring engine. Each stage is operated by the Middleware Layer (Layer 3) and is independent of Operator Layer (Layer 2) infrastructure. An operator cannot throttle, filter, or modify telemetry after it leaves the validator host.</p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line" style="visibility:hidden"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Stage 1: Emission (Validator Host)</h4>
+          <p>The <code>pft-telemetry-agent</code> process collects metrics from local process interfaces and emits signed telemetry payloads to the OCP telemetry endpoint over mTLS 1.3 on TCP/9443. Each payload is signed with the operator's telemetry signing key (scoped to telemetry only; distinct from the signing ceremony key). Payload format: JSON, RFC 8785 canonical serialization. Each payload includes a monotonic sequence number, UTC timestamp (OCP NTP source), validator node identifier, operator identifier, and metric batch for the collection cycle.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Stage 2: Reception and Validation (OCP Ingestion Gateway)</h4>
+          <p>The OCP ingestion gateway receives payloads, verifies the telemetry signing key signature, checks sequence number continuity (gap detection), validates the UTC timestamp is within the 120-second freshness window, and routes the payload to the metric store. A sequence gap of one or more cycles immediately registers a telemetry gap event against the affected validator. The gateway does not buffer missed payloads: a gap is a gap, not a retry opportunity. Payloads failing signature verification are dropped and a security alert is generated per the M5 Security Hardening pipeline.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Stage 3: Storage (OCP Metric Store)</h4>
+          <p>Validated payloads are written to a time-series metric store partitioned by validator node identifier and operator identifier. Retention: 30 days for raw metric values; 1 year for aggregated 5-minute rollup; 7 years for health tier transition events (regulatory minimum, consistent with M5 Security Hardening log retention). The metric store is write-once for incoming telemetry: no payload can be modified after ingestion. The OCP audit log records every write with a content hash.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Stage 4: Scoring Engine (OCP Health Evaluator)</h4>
+          <p>The OCP health evaluator reads the metric store on a 60-second cycle (aligned with the CRS evaluation cycle) and computes the composite health score for each validator node. Score computation is deterministic: given the same metric inputs, the scoring engine always produces the same output. The evaluator also maintains the tier transition state machine, applying sustain window logic before registering tier changes. Tier transition events are written to the OCP audit log and trigger the action pipeline defined in Section 4.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>1.3 Storage Schema</h3>
+    <p>The metric store schema is organized around three entity types that map directly to the health signal taxonomy in Section 2.</p>
+    <table>
+      <tr><th>Entity Type</th><th>Partition Key</th><th>Sort Key</th><th>Key Fields</th><th>Retention</th></tr>
+      <tr>
+        <td>Node metric record</td>
+        <td><code>node_id</code></td>
+        <td><code>timestamp_utc</code></td>
+        <td><code>operator_id</code>, <code>metric_type</code>, <code>value</code>, <code>sequence_num</code>, <code>payload_hash</code></td>
+        <td>30 days raw; 1 year rollup</td>
+      </tr>
+      <tr>
+        <td>Operator aggregate record</td>
+        <td><code>operator_id</code></td>
+        <td><code>timestamp_utc</code></td>
+        <td><code>node_count</code>, <code>fleet_health_score</code>, <code>fleet_uptime_rate</code>, <code>aggregate_ceremony_success_rate</code></td>
+        <td>30 days raw; 1 year rollup</td>
+      </tr>
+      <tr>
+        <td>Network aggregate record</td>
+        <td><code>network_epoch</code></td>
+        <td><code>timestamp_utc</code></td>
+        <td><code>active_validator_count</code>, <code>network_health_score</code>, <code>participation_rate</code>, <code>ceremony_throughput</code></td>
+        <td>30 days raw; 1 year rollup</td>
+      </tr>
+      <tr>
+        <td>Health tier transition event</td>
+        <td><code>node_id</code></td>
+        <td><code>transition_timestamp_utc</code></td>
+        <td><code>from_tier</code>, <code>to_tier</code>, <code>trigger_signals</code>, <code>composite_score_at_transition</code>, <code>sustain_cycles_elapsed</code></td>
+        <td>7 years (regulatory minimum)</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 2 -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>Health Signal Taxonomy</h2>
+  </div>
+
+  <p>Health signals are organized across three layers. Each layer answers a distinct question. The node layer answers whether this specific validator is functioning correctly. The operator layer answers whether the operator's infrastructure as a whole is reliable. The network layer answers whether the network is operating within expected parameters. Signals from all three layers feed into the composite health score, weighted by layer as specified in Section 3.</p>
+
+  <div class="subsection">
+    <h3>2.1 Node Layer Signals</h3>
+    <p>Node layer signals are collected directly from the validator host by the <code>pft-telemetry-agent</code> process. They reflect the health of the individual validator node in isolation.</p>
+    <table>
+      <tr><th>Signal</th><th>Signal ID</th><th>Data Source</th><th>Collection Method</th><th>Healthy Range</th><th>Weight in Node Score</th></tr>
+      <tr>
+        <td>Heartbeat continuity</td>
+        <td><code>NODE_HEARTBEAT</code></td>
+        <td>Telemetry agent liveness ping</td>
+        <td>30-second emission; OCP gap detection on sequence numbers</td>
+        <td>0 gaps in 30-minute window</td>
+        <td>25%</td>
+      </tr>
+      <tr>
+        <td>p95 signing latency</td>
+        <td><code>NODE_LATENCY_P95</code></td>
+        <td>Signing daemon: envelope-receipt to signed-blob timestamp</td>
+        <td>Computed per 60-second window; emitted with performance batch</td>
+        <td>Below 200ms; warning above 300ms; critical above 400ms</td>
+        <td>20%</td>
+      </tr>
+      <tr>
+        <td>Ceremony success rate</td>
+        <td><code>NODE_CEREMONY_SUCCESS</code></td>
+        <td>Signing daemon: completed ceremonies vs. initiated ceremonies</td>
+        <td>Rolling 1-hour window; emitted per 60-second cycle</td>
+        <td>Above 99%; warning below 97%; critical below 95%</td>
+        <td>20%</td>
+      </tr>
+      <tr>
+        <td>Slot participation rate</td>
+        <td><code>NODE_SLOT_PARTICIPATION</code></td>
+        <td>OCP: slots assigned vs. slots fulfilled per validator identity</td>
+        <td>Computed by OCP from network state; 60-second update</td>
+        <td>Above 98%; warning below 95%; critical below 90%</td>
+        <td>15%</td>
+      </tr>
+      <tr>
+        <td>Resource headroom</td>
+        <td><code>NODE_RESOURCE</code></td>
+        <td>Telemetry agent: CPU, memory, disk I/O from OS metrics</td>
+        <td>60-second emission with resource batch</td>
+        <td>CPU below 80%; memory below 85%; I/O wait below 50ms</td>
+        <td>10%</td>
+      </tr>
+      <tr>
+        <td>Binary integrity status</td>
+        <td><code>NODE_INTEGRITY</code></td>
+        <td>Runtime integrity monitor: hash comparison result</td>
+        <td>300-second polling; result emitted as pass/fail boolean</td>
+        <td>Pass on all checks; any fail = immediate node score floor at 0</td>
+        <td>10% (pass/fail override: fail sets node score to 0 regardless of other signals)</td>
+      </tr>
+      <tr>
+        <td>Telemetry freshness</td>
+        <td><code>NODE_FRESHNESS</code></td>
+        <td>OCP ingestion gateway: time since last valid payload received</td>
+        <td>Computed by OCP; not emitted by node (node cannot self-report freshness)</td>
+        <td>Last payload within 60 seconds; warning at 60-90 seconds; gap trigger at 90 seconds</td>
+        <td>Staleness beyond 90 seconds sets node score to 0 (offline)</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>2.2 Operator Aggregate Layer Signals</h3>
+    <p>Operator aggregate signals are computed by the OCP health evaluator from the fleet of nodes under a single operator. They reflect whether the operator's infrastructure management is reliable across multiple validators, not just the performance of a single node.</p>
+    <table>
+      <tr><th>Signal</th><th>Signal ID</th><th>Computation Source</th><th>Collection Method</th><th>Healthy Range</th><th>Weight in Operator Score</th></tr>
+      <tr>
+        <td>Fleet uptime rate</td>
+        <td><code>OP_FLEET_UPTIME</code></td>
+        <td>OCP: percentage of nodes in healthy or degraded tier across operator's active validators</td>
+        <td>Computed per 60-second scoring cycle from node tier states</td>
+        <td>100% nodes in healthy/degraded; warning below 95%; critical below 90%</td>
+        <td>35%</td>
+      </tr>
+      <tr>
+        <td>Operator ceremony throughput</td>
+        <td><code>OP_CEREMONY_THROUGHPUT</code></td>
+        <td>OCP: aggregate ceremonies completed vs. initiated across operator fleet</td>
+        <td>Rolling 1-hour window; updated per scoring cycle</td>
+        <td>Above 99%; warning below 97%; critical below 94%</td>
+        <td>25%</td>
+      </tr>
+      <tr>
+        <td>Fleet latency profile</td>
+        <td><code>OP_FLEET_LATENCY</code></td>
+        <td>OCP: p95 latency averaged across all active nodes under operator</td>
+        <td>Computed per 60-second cycle from node latency signals</td>
+        <td>Fleet average below 250ms; warning above 325ms; critical above 400ms</td>
+        <td>20%</td>
+      </tr>
+      <tr>
+        <td>Patch currency</td>
+        <td><code>OP_PATCH_CURRENCY</code></td>
+        <td>OCP: percentage of operator nodes running the current authorized binary version</td>
+        <td>Computed from secure boot attestation data; updated on each binary version check</td>
+        <td>100% on current version; warning if any node is one version behind; critical if any node is two or more versions behind</td>
+        <td>10%</td>
+      </tr>
+      <tr>
+        <td>Security incident rate</td>
+        <td><code>OP_INCIDENT_RATE</code></td>
+        <td>OCP: P1 and P2 incidents generated against operator nodes in rolling 30-day window</td>
+        <td>Computed from M5 Security Hardening incident log</td>
+        <td>0 P1 incidents; 0 P2 incidents in 30 days = full score; score decays linearly with incident count</td>
+        <td>10%</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>2.3 Network-Wide Layer Signals</h3>
+    <p>Network-wide signals reflect the state of the Post Fiat network as a whole. They provide context for interpreting node and operator signals: a validator showing degraded participation during a network-wide participation drop is less concerning than the same degradation during a period of normal network health. Network signals do not directly affect individual validator health scores; they provide a contextual modifier as defined in Section 3.</p>
+    <table>
+      <tr><th>Signal</th><th>Signal ID</th><th>Data Source</th><th>Collection Method</th><th>Normal Range</th></tr>
+      <tr>
+        <td>Network participation rate</td>
+        <td><code>NET_PARTICIPATION</code></td>
+        <td>OCP: percentage of all registered validators fulfilling slot assignments</td>
+        <td>Computed per 60-second cycle from network state</td>
+        <td>Above 95%; network stress flag at below 90%</td>
+      </tr>
+      <tr>
+        <td>Network ceremony throughput</td>
+        <td><code>NET_CEREMONY_THROUGHPUT</code></td>
+        <td>OCP: ceremonies completed network-wide per 10-minute window</td>
+        <td>Computed by OCP from signing ceremony log</td>
+        <td>Above baseline (established during M4 stress test); stress flag at below 85% of baseline</td>
+      </tr>
+      <tr>
+        <td>Active validator count</td>
+        <td><code>NET_ACTIVE_VALIDATORS</code></td>
+        <td>OCP node registry: validators in healthy or degraded tier</td>
+        <td>Updated on each tier transition event; 60-second snapshot</td>
+        <td>At or above 2-operator minimum; critical flag at minimum</td>
+      </tr>
+      <tr>
+        <td>Fork divergence status</td>
+        <td><code>NET_FORK_STATUS</code></td>
+        <td>Post Fiat peer network: chain tip agreement across validators</td>
+        <td>Monitored by OCP from peer network observation; 30-second update</td>
+        <td>100% tip agreement; any divergence generates a network stress event</td>
+      </tr>
+    </table>
+    <div class="callout info">
+      <strong>Network Stress Modifier</strong>
+      When two or more network-wide signals are in a stress state simultaneously, the OCP health evaluator applies a contextual modifier to individual validator health score penalties. Latency penalties are reduced by 50% and participation rate penalties are reduced by 50% during a network stress event. This prevents a network-wide degradation from generating mass individual validator tier downgrades that would compound the problem. The modifier does not apply to binary integrity violations, telemetry gaps, or ceremony failures (these are node-specific problems regardless of network state).
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 3 -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>Scoring Logic and Threshold Definitions</h2>
+  </div>
+
+  <p>The composite health score is a single number between 0 and 100 that summarizes the overall health state of a validator node. It is computed every 60 seconds by the OCP health evaluator from the signals defined in Section 2. The score maps to one of four health tiers. Tier classification governs what automated actions OCP takes and feeds into the escalation path defined in Section 5.</p>
+
+  <div class="subsection">
+    <h3>3.1 Composite Health Score Calculation</h3>
+    <p>The composite health score is computed in three stages: node score, operator context adjustment, and network context adjustment. Each stage applies a defined weight and modifier set.</p>
+
+    <div class="formula-block">
+      <div class="formula-title">Stage 1: Node Score (0-100)</div>
+      NODE_SCORE = (<br>
+      &nbsp;&nbsp;NODE_HEARTBEAT_score * 0.25 +<br>
+      &nbsp;&nbsp;NODE_LATENCY_P95_score * 0.20 +<br>
+      &nbsp;&nbsp;NODE_CEREMONY_SUCCESS_score * 0.20 +<br>
+      &nbsp;&nbsp;NODE_SLOT_PARTICIPATION_score * 0.15 +<br>
+      &nbsp;&nbsp;NODE_RESOURCE_score * 0.10 +<br>
+      &nbsp;&nbsp;NODE_INTEGRITY_score * 0.10<br>
+      )<br>
+      * NODE_FRESHNESS_multiplier<br><br>
+      NODE_FRESHNESS_multiplier = 1.0 if last payload within 60s<br>
+      NODE_FRESHNESS_multiplier = 0.5 if last payload 60-90s ago<br>
+      NODE_FRESHNESS_multiplier = 0.0 if last payload older than 90s (offline)
+    </div>
+
+    <div class="formula-block">
+      <div class="formula-title">Stage 2: Operator Context Adjustment</div>
+      OPERATOR_ADJUSTMENT = OPERATOR_SCORE * 0.15<br><br>
+      OPERATOR_SCORE = (<br>
+      &nbsp;&nbsp;OP_FLEET_UPTIME_score * 0.35 +<br>
+      &nbsp;&nbsp;OP_CEREMONY_THROUGHPUT_score * 0.25 +<br>
+      &nbsp;&nbsp;OP_FLEET_LATENCY_score * 0.20 +<br>
+      &nbsp;&nbsp;OP_PATCH_CURRENCY_score * 0.10 +<br>
+      &nbsp;&nbsp;OP_INCIDENT_RATE_score * 0.10<br>
+      )<br><br>
+      The operator adjustment contributes up to 15 points to the composite score.<br>
+      A healthy operator can lift a borderline node score above a tier threshold.<br>
+      A degraded operator can push a borderline node score below a tier threshold.
+    </div>
+
+    <div class="formula-block">
+      <div class="formula-title">Stage 3: Network Context Adjustment and Final Score</div>
+      COMPOSITE_HEALTH_SCORE = (<br>
+      &nbsp;&nbsp;NODE_SCORE * 0.85 +<br>
+      &nbsp;&nbsp;OPERATOR_ADJUSTMENT<br>
+      ) * NETWORK_MODIFIER<br><br>
+      NETWORK_MODIFIER = 1.0 under normal network conditions<br>
+      NETWORK_MODIFIER = 1.05 during network stress event (grace up to 5 additional points)<br>
+      NETWORK_MODIFIER never exceeds 1.05<br>
+      NETWORK_MODIFIER does not apply if NODE_INTEGRITY_score = 0 or NODE_FRESHNESS_multiplier = 0
+    </div>
+
+    <p>Individual signal scores (NODE_HEARTBEAT_score, NODE_LATENCY_P95_score, etc.) are each normalized to a 0-100 range per the signal healthy ranges defined in Section 2. A signal at its healthy threshold scores 100. A signal at its critical threshold scores 0. Values between thresholds are linearly interpolated. Values beyond the critical threshold remain at 0 and do not go negative.</p>
+  </div>
+
+  <div class="subsection">
+    <h3>3.2 Health Tier Definitions and Thresholds</h3>
+
+    <div class="score-bar-container">
+      <div class="score-bar-row">
+        <span class="score-bar-label">HEALTHY</span>
+        <div class="score-bar healthy" style="width: 85%;">80 - 100</div>
+      </div>
+      <div class="score-bar-row">
+        <span class="score-bar-label">DEGRADED</span>
+        <div class="score-bar degraded" style="width: 60%;">55 - 79</div>
+      </div>
+      <div class="score-bar-row">
+        <span class="score-bar-label">CRITICAL</span>
+        <div class="score-bar critical" style="width: 35%;">25 - 54</div>
+      </div>
+      <div class="score-bar-row">
+        <span class="score-bar-label">OFFLINE</span>
+        <div class="score-bar offline" style="width: 25%;">0 - 24</div>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Tier</th><th>Score Range</th><th>Characterization</th><th>Sustain Window for Entry</th><th>Sustain Window for Exit (Recovery)</th></tr>
+      <tr>
+        <td><span class="tier healthy">HEALTHY</span></td>
+        <td>80 - 100</td>
+        <td>All primary signals within normal operating bounds. Operator infrastructure reliable. No active incidents. Signing ceremonies completing successfully at required rate.</td>
+        <td>1 cycle at 80+ (score enters healthy immediately from degraded after recovery window; see Section 5)</td>
+        <td>2 consecutive cycles below 80 required before transition to degraded</td>
+      </tr>
+      <tr>
+        <td><span class="tier degraded">DEGRADED</span></td>
+        <td>55 - 79</td>
+        <td>One or more signals outside healthy bounds but above critical threshold. Validator continues operations. Operator notified. No automated rerouting yet, but CRS impact begins.</td>
+        <td>2 consecutive 60-second cycles in 55-79 range before tier transition from healthy</td>
+        <td>4 consecutive cycles above 80 required before exit to healthy (recovery window is longer than entry window)</td>
+      </tr>
+      <tr>
+        <td><span class="tier critical">CRITICAL</span></td>
+        <td>25 - 54</td>
+        <td>Multiple signals outside bounds or one signal at critical threshold. Signing ceremony suspension evaluated. Operator escalation required. Slashing exposure clock begins.</td>
+        <td>2 consecutive cycles in 25-54 range before tier transition from degraded</td>
+        <td>6 consecutive cycles above 55 required before exit to degraded (extended to prevent rapid tier cycling)</td>
+      </tr>
+      <tr>
+        <td><span class="tier offline">OFFLINE</span></td>
+        <td>0 - 24</td>
+        <td>Node unreachable or binary integrity failed. OCP isolation triggered. No signing operations. Network-level coordination initiated if minimum operator count is threatened.</td>
+        <td>Immediate: NODE_FRESHNESS_multiplier = 0 or NODE_INTEGRITY_score = 0 places node in offline tier without waiting for sustain window</td>
+        <td>Offline exit requires manual operator remediation and OCP + institution clearance before re-entry (see Section 5.3)</td>
+      </tr>
+    </table>
+
+    <div class="callout warning">
+      <strong>Sustain Window Design Rationale</strong>
+      The asymmetric sustain windows (shorter entry, longer exit) prevent tier oscillation, where a validator cycles rapidly between tiers because a single noisy signal crosses a threshold repeatedly. A validator that hits degraded must stay above 80 for four consecutive cycles (4 minutes) before returning to healthy. This prevents an operator from gaming health score reporting by briefly correcting a metric to trigger tier exit before the underlying problem is resolved. The sustain window cannot be shortened by any party: it is enforced by the OCP health evaluator, not the operator.
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>3.3 Automated Assessment Rules for Signal Combinations</h3>
+    <p>Certain signal combinations produce deterministic assessment outcomes that override the composite score calculation. These override rules apply before score computation and take precedence over any tier assignment the score would otherwise produce.</p>
+    <table>
+      <tr><th>Signal Combination</th><th>Override Rule</th><th>Resulting Tier</th><th>Rationale</th></tr>
+      <tr>
+        <td><code>NODE_INTEGRITY</code> = fail (any check)</td>
+        <td>NODE_SCORE floors to 0; composite score floors to 0; offline tier assigned immediately without sustain window</td>
+        <td><span class="tier offline">OFFLINE</span></td>
+        <td>Binary integrity failure has no benign explanation. Waiting for a sustain window would allow a compromised process to continue operations.</td>
+      </tr>
+      <tr>
+        <td><code>NODE_FRESHNESS_multiplier</code> = 0 (90-second gap)</td>
+        <td>Composite score set to 0; offline tier assigned immediately without sustain window</td>
+        <td><span class="tier offline">OFFLINE</span></td>
+        <td>Consistent with M3 telemetry gap failover trigger. A node that cannot be observed cannot be trusted to be operating correctly.</td>
+      </tr>
+      <tr>
+        <td><code>NODE_LATENCY_P95</code> above 400ms AND <code>NODE_CEREMONY_SUCCESS</code> below 95%</td>
+        <td>Node enters critical tier regardless of composite score if composite would otherwise score as degraded</td>
+        <td><span class="tier critical">CRITICAL</span></td>
+        <td>Combined latency and ceremony failure indicate a systemic signing infrastructure problem, not isolated signal noise.</td>
+      </tr>
+      <tr>
+        <td><code>NODE_HEARTBEAT</code> gap detected AND <code>NODE_FRESHNESS</code> between 60-90s</td>
+        <td>Freshness penalty applied (multiplier = 0.5); degraded tier minimum applied regardless of other signal scores</td>
+        <td><span class="tier degraded">DEGRADED</span> minimum</td>
+        <td>A heartbeat gap with degraded freshness is an early telemetry disruption indicator. Healthy tier is not appropriate even if other metrics are nominal.</td>
+      </tr>
+      <tr>
+        <td><code>OP_INCIDENT_RATE</code> includes 1 or more P1 incidents in last 30 days</td>
+        <td>Operator score capped at 60 regardless of other operator signals; operator adjustment contribution reduced accordingly</td>
+        <td>Operator adjustment reduced; does not by itself change node tier</td>
+        <td>A recent P1 incident on any node under an operator reflects infrastructure risk that warrants a sustained operator score penalty beyond the incident resolution date.</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 4 -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>OCP Integration for Score-Triggered Actions</h2>
+  </div>
+
+  <p>The OCP action pipeline translates health score tier transitions into concrete infrastructure responses. Actions are organized into four categories: alerting, traffic rerouting, capacity scaling, and pre-slashing warnings. Each category has defined latency requirements for how quickly OCP must execute the action after a tier transition is confirmed. All actions are logged to the OCP audit trail with the triggering tier transition event ID.</p>
+
+  <div class="subsection">
+    <h3>4.1 Action-to-Score Mapping Table</h3>
+    <table>
+      <tr><th>Tier Transition</th><th>Alerting Action</th><th>Traffic Rerouting Action</th><th>Capacity Scaling Action</th><th>Pre-Slashing Warning</th><th>Execution Latency SLA</th></tr>
+      <tr>
+        <td>Healthy to Degraded</td>
+        <td>P3 alert to operator SOC (Slack channel); OCP dashboard status update</td>
+        <td>None: validator remains in routing pool at current weight; CRS continues to govern weight adjustments</td>
+        <td>None at tier entry; OCP flags operator for capacity review if degraded state persists beyond 10 minutes</td>
+        <td>None</td>
+        <td>60 seconds from tier transition confirmation</td>
+      </tr>
+      <tr>
+        <td>Degraded (10+ minutes)</td>
+        <td>P2 alert to operator SOC (PagerDuty) if degraded state persists beyond 10 minutes without recovery trajectory</td>
+        <td>CRS routing weight reduced by applying a 10% penalty to the CRS uptime input for the affected operator; weight redistribution respects 60% cap</td>
+        <td>OCP sends capacity review request to operator via admin channel; operator has 30 minutes to respond with remediation plan</td>
+        <td>None</td>
+        <td>P2 alert within 60 seconds of 10-minute persistence threshold; weight adjustment within 30 seconds of alert</td>
+      </tr>
+      <tr>
+        <td>Degraded to Critical</td>
+        <td>P2 alert escalated to P1; operator SOC PagerDuty page; institution notification via gateway</td>
+        <td>Validator signing ceremony acceptance suspended; CRS routing weight set to 0 for the affected node; allocation redistributed to remaining operators subject to 60% cap and 2-operator minimum</td>
+        <td>OCP initiates standby capacity check: verifies at least one warm standby node is available under the operator; flags if not</td>
+        <td>Pre-slashing warning issued to operator: slashing exposure begins if critical tier persists beyond the escalation window defined in Section 5</td>
+        <td>All actions within 30 seconds of tier transition confirmation; consistent with M3 failover SLA</td>
+      </tr>
+      <tr>
+        <td>Critical to Offline</td>
+        <td>P1 alert; operator SOC PagerDuty; institution direct notification; network coordination alert if 2-operator minimum threatened</td>
+        <td>Validator fully isolated per M5 Security Hardening isolation procedure; allocation redistributed; if 2-operator minimum cannot be maintained, OCP enters safe degraded state</td>
+        <td>OCP activates standby failover procedure; operator receives remediation window notification</td>
+        <td>Slashing exposure is active; exposure escalates per degradation curve in Section 5; institution informed of exposure status</td>
+        <td>All actions within 30 seconds</td>
+      </tr>
+      <tr>
+        <td>Any Tier to Healthy (Recovery)</td>
+        <td>Resolution notification to operator SOC and institution; OCP dashboard status update; incident record closed</td>
+        <td>Signing ceremony acceptance restored after clearance sequence (Section 5.3); CRS weight restored through normal scoring cycle</td>
+        <td>Capacity review request closed; operator receives recovery confirmation</td>
+        <td>Pre-slashing warning cleared; slashing exposure clock reset</td>
+        <td>60 seconds from healthy tier confirmation after recovery sustain window completes</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>4.2 Alerting Integration</h3>
+    <p>Alerting from the health scoring system routes through the same dual-channel architecture established in M5 Security Hardening: simultaneous delivery to the operator SOC and the OCP incident queue. Health score alerts are distinct from security alerts in the OCP incident queue but share the same routing infrastructure and anti-suppression design. An operator cannot suppress a health score alert by interfering with the telemetry pipeline, because the OCP health evaluator operates independently from operator infrastructure.</p>
+    <div class="matrix">
+      <div class="matrix-cell">
+        <h4>Operator SOC Channels</h4>
+        <ul>
+          <li>PagerDuty: critical tier transitions, P1 escalations</li>
+          <li>Slack #validator-health: degraded tier entries, P2 alerts</li>
+          <li>Email digest: degraded duration warnings, P3 alerts</li>
+          <li>OCP dashboard: real-time health score display per node</li>
+        </ul>
+      </div>
+      <div class="matrix-cell">
+        <h4>OCP and Institution Channels</h4>
+        <ul>
+          <li>OCP incident queue: all tier transitions; linked to health score record</li>
+          <li>Institution gateway: critical tier entry, pre-slashing warnings, recovery confirmations</li>
+          <li>Network coordination: offline tier entry threatening 2-operator minimum</li>
+          <li>OCP audit log: all transitions; immutable; linked to scoring cycle record</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>4.3 Traffic Rerouting Integration</h3>
+    <p>Health score rerouting integrates with the CRS routing engine from M3. The health score does not replace CRS; it adds a health-based input to routing decisions. Rerouting actions are executed by the OCP routing engine, not by the operator.</p>
+    <table>
+      <tr><th>Rerouting Action</th><th>Mechanism</th><th>Constraint</th><th>Reversal Condition</th></tr>
+      <tr>
+        <td>CRS weight penalty (degraded, 10+ minutes)</td>
+        <td>OCP applies a modifier to the uptime input in the CRS formula: uptime_input = uptime_24h * 0.90</td>
+        <td>Resulting weight must still satisfy 60% cap; minimum 2-operator pool maintained</td>
+        <td>Validator exits degraded tier and completes recovery sustain window</td>
+      </tr>
+      <tr>
+        <td>Signing ceremony suspension (critical)</td>
+        <td>OCP closes the signing envelope delivery channel; pending ceremonies return <code>ERR_NODE_ISOLATED</code></td>
+        <td>Institution notified before suspension takes effect (notification is simultaneous with action, not prior approval)</td>
+        <td>Validator completes full clearance sequence per Section 5.3; institution authorization required</td>
+      </tr>
+      <tr>
+        <td>CRS weight set to 0 (critical)</td>
+        <td>OCP sets the affected node's routing weight to 0; redistributes allocation across remaining operators per CRS proportional weights</td>
+        <td>60% single-operator cap enforced on redistribution; 2-operator minimum enforced</td>
+        <td>Validator returns to healthy tier; CRS weight restored through normal 60-second scoring cycle</td>
+      </tr>
+      <tr>
+        <td>Full isolation (offline)</td>
+        <td>Firewall isolation per M5 Security Hardening Section 1.2; all non-forensic traffic dropped</td>
+        <td>Evidence collection takes precedence over immediate restart</td>
+        <td>OCP + institution co-clearance; return to healthy tier after recovery window</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>4.4 Pre-Slashing Warning Architecture</h3>
+    <p>The pre-slashing warning is the critical notification that separates automated remediation from network-level consequence. It is issued at critical tier entry and gives the operator a defined window to remediate before slashing exposure becomes active. The warning is delivered to both the operator SOC and the institution.</p>
+    <div class="callout critical">
+      <strong>Pre-Slashing Warning Content</strong>
+      Every pre-slashing warning includes: the validator node identifier, the health tier that triggered the warning (critical), the composite score at warning issuance, the escalation window duration before slashing exposure begins, the current elapsed time since critical tier entry, the specific signals driving the score below the critical threshold, and the remediation actions required to exit critical tier. The operator receives this notification via PagerDuty; the institution receives it via the institutional gateway. Neither party can suppress delivery of the other's notification.
+    </div>
+    <p>The pre-slashing warning does not constitute slashing. It is a notification that the escalation clock has started. Slashing exposure, defined in Section 5.2, becomes active only after the escalation window elapses without recovery. During the escalation window, OCP monitoring frequency increases from 60-second cycles to 30-second cycles for the affected node to detect recovery faster and potentially halt the escalation before slashing exposure begins.</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 5 -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>Degradation Curves, Escalation Paths, and Recovery Mechanics</h2>
+  </div>
+
+  <p>The degradation curve defines how health scores decay under sustained anomalies and how that decay maps to escalating consequences. The recovery mechanics define how scores and tier states are restored after remediation. Together, these mechanics ensure that consequences are proportional to the duration and severity of degradation, not to any single transient metric event.</p>
+
+  <div class="subsection">
+    <h3>5.1 Health Score Degradation Curves</h3>
+    <p>Score degradation follows a linear decay function within each tier band, driven by sustained signal anomalies. Decay is computed per 60-second scoring cycle. The decay rate is not applied on top of the composite score formula; it is an additional penalty applied to the composite score when the same anomaly has persisted across consecutive cycles without improvement.</p>
+
+    <div class="formula-block">
+      <div class="formula-title">Sustained Anomaly Decay Penalty</div>
+      SUSTAINED_PENALTY = min(30, ANOMALY_CYCLES_ELAPSED * SIGNAL_DECAY_RATE)<br><br>
+      ANOMALY_CYCLES_ELAPSED = number of consecutive 60-second cycles where the signal<br>
+      &nbsp;&nbsp;has been outside the healthy range (resets to 0 on any cycle where signal returns to healthy range)<br><br>
+      SIGNAL_DECAY_RATE per signal type:<br>
+      &nbsp;&nbsp;NODE_HEARTBEAT gap: 5.0 points per cycle (fast decay; liveness is critical)<br>
+      &nbsp;&nbsp;NODE_CEREMONY_SUCCESS below 95%: 3.0 points per cycle<br>
+      &nbsp;&nbsp;NODE_LATENCY_P95 above 400ms: 2.5 points per cycle<br>
+      &nbsp;&nbsp;NODE_SLOT_PARTICIPATION below 90%: 2.0 points per cycle<br>
+      &nbsp;&nbsp;NODE_RESOURCE above ceiling: 1.0 point per cycle<br>
+      &nbsp;&nbsp;OP_FLEET_UPTIME below 90%: 2.0 points per cycle (applied at operator level)<br><br>
+      ADJUSTED_COMPOSITE_SCORE = COMPOSITE_HEALTH_SCORE - SUSTAINED_PENALTY<br>
+      (floor at 0; SUSTAINED_PENALTY cannot push score below 0)
+    </div>
+
+    <p>The maximum sustained penalty is capped at 30 points. This prevents a single persistently anomalous signal from collapsing the composite score to 0 by itself. A node with a heartbeat gap and no other anomalies reaches the 30-point cap after 6 consecutive cycles (6 minutes) and holds at that penalty level. Combined anomalies stack penalties: a node with both a heartbeat gap and ceremony failures accumulates 8 points per cycle and reaches the cap in approximately 4 cycles (4 minutes).</p>
+
+    <div class="decay-grid">
+      <div class="decay-cell">
+        <div class="decay-time">2 min</div>
+        <div class="decay-label">Heartbeat gap alone hits degraded threshold (from 90 baseline)</div>
+      </div>
+      <div class="decay-cell">
+        <div class="decay-time">4 min</div>
+        <div class="decay-label">Heartbeat gap alone reaches critical threshold</div>
+      </div>
+      <div class="decay-cell">
+        <div class="decay-time">6 min</div>
+        <div class="decay-label">Sustained penalty cap reached; rate of decay stops</div>
+      </div>
+      <div class="decay-cell">
+        <div class="decay-time">10 min</div>
+        <div class="decay-label">Degraded duration threshold: P2 alert and CRS weight penalty trigger</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>5.2 Escalation Sequence</h3>
+    <p>The escalation sequence maps elapsed time in a degraded or critical tier to specific operator consequences. The sequence is designed to give operators a proportional remediation window at each stage before consequences escalate. No stage is skippable: OCP enforces the sequence regardless of operator assertions that the problem is resolved.</p>
+    <table>
+      <tr><th>Elapsed Time in Tier</th><th>Tier</th><th>Escalation Stage</th><th>OCP Action</th><th>Operator Consequence</th></tr>
+      <tr>
+        <td>T+0 (tier entry)</td>
+        <td><span class="tier degraded">DEGRADED</span></td>
+        <td>1: Automated notification</td>
+        <td>P3 alert; OCP dashboard update; no routing change</td>
+        <td>Operator aware; expected to investigate</td>
+      </tr>
+      <tr>
+        <td>T+10 minutes</td>
+        <td><span class="tier degraded">DEGRADED</span></td>
+        <td>2: Escalated alert and routing impact</td>
+        <td>P2 alert (PagerDuty); CRS weight penalty applied; capacity review request sent</td>
+        <td>Routing weight reduced; SLA clock starts for remediation response</td>
+      </tr>
+      <tr>
+        <td>T+30 minutes</td>
+        <td><span class="tier degraded">DEGRADED</span></td>
+        <td>3: Institution notification</td>
+        <td>Institution gateway notification: validator has been degraded for 30 minutes</td>
+        <td>Institution aware; may initiate communication with operator</td>
+      </tr>
+      <tr>
+        <td>T+0 (tier entry)</td>
+        <td><span class="tier critical">CRITICAL</span></td>
+        <td>4: Pre-slashing warning and ceremony suspension</td>
+        <td>P1 alert; ceremony suspension; CRS weight set to 0; pre-slashing warning issued with 60-minute escalation window</td>
+        <td>Signing operations suspended; pre-slashing clock starts; institution notified directly</td>
+      </tr>
+      <tr>
+        <td>T+60 minutes</td>
+        <td><span class="tier critical">CRITICAL</span></td>
+        <td>5: Slashing exposure activation</td>
+        <td>Slashing exposure record created in OCP governance log; network coordination alert issued; institution informed of active exposure</td>
+        <td>Operator is now in active slashing exposure; each additional cycle without remediation extends exposure window</td>
+      </tr>
+      <tr>
+        <td>T+120 minutes</td>
+        <td><span class="tier critical">CRITICAL</span></td>
+        <td>6: Network governance escalation</td>
+        <td>OCP escalates to network governance layer; cohort-level notification issued; validator deregistration procedure may be initiated at cohort discretion</td>
+        <td>Operator deregistration is now possible without operator consent; institution holds signing authority over deregistration ceremony</td>
+      </tr>
+      <tr>
+        <td>T+0 (tier entry)</td>
+        <td><span class="tier offline">OFFLINE</span></td>
+        <td>7: Full isolation and forensic capture</td>
+        <td>M5 Security Hardening isolation procedure activated; forensic evidence capture begins; allocation redistributed; institution notified</td>
+        <td>Node fully offline; slashing exposure active; return requires OCP + institution clearance</td>
+      </tr>
+    </table>
+
+    <div class="callout critical">
+      <strong>Slashing Exposure Mechanics</strong>
+      Slashing exposure is a governance state, not an automated penalty. The Post Fiat network uses Verified Inference score degradation rather than stake slashing as the primary consequence mechanism. Slashing exposure records the duration and severity of the validator's failure to meet operational standards. The exposure record feeds into the Verified Inference score decay, which reduces the operator's participation probability in future signing ceremony assignment. Extended slashing exposure (beyond 120 minutes in critical or offline tier) triggers network governance escalation where the cohort may vote to deregister the validator, which is a permanent consequence requiring an institution-signed ceremony.
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>5.3 Recovery Score Restoration Mechanics</h3>
+    <p>Recovery is not automatic on tier exit. A validator that crosses above a tier threshold must sustain the improved score for the full recovery sustain window before OCP treats it as having genuinely recovered. This is separate from the Verified Inference score restoration, which follows its own network-layer timeline.</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line" style="visibility:hidden"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Step 1: Sustained Score Improvement</h4>
+          <p>The validator's composite health score must remain in the target tier for the full recovery sustain window: 4 consecutive cycles (4 minutes) to exit degraded to healthy; 6 consecutive cycles (6 minutes) to exit critical to degraded; offline exit requires manual clearance (no cycle count alone is sufficient). If the score drops back below the target threshold during the sustain window, the window resets to zero.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Step 2: Sustained Penalty Reset</h4>
+          <p>Once the sustain window completes, the sustained anomaly decay penalty resets to 0 for all signals that have returned to their healthy range. Signals still outside the healthy range continue to accumulate decay penalties at their per-cycle rate. Partial penalty resets apply per-signal: only the signals that have genuinely recovered reset their penalty contribution.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Step 3: Routing Restoration</h4>
+          <p>After the sustain window completes, CRS routing weight is restored through the normal 60-second CRS scoring cycle. The health score tier no longer applies the CRS weight penalty. CRS weight returns to its natural level based on VI score, uptime, latency, and telemetry freshness inputs. There is no artificial boosting of CRS weight after recovery; the operator earns routing weight back through sustained performance.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Step 4: Ceremony Restoration (Critical and Offline Recovery Only)</h4>
+          <p>For validators recovering from critical or offline tier, ceremony restoration requires the OCP clearance sequence from M5 Security Hardening Section 5.4: threat eliminated, clean build verified, 5-minute telemetry continuity confirmed, post-incident review delivered, and institution restoration authorization via signing ceremony. The institution's signing ceremony envelope for restoration explicitly references the tier transition record ID so the institution knows exactly which recovery event it is authorizing. Ceremony restoration is the final gate; it cannot be bypassed even if the health score is firmly in the healthy tier.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-connector"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+        <div class="flow-box">
+          <h4>Step 5: Slashing Exposure Record Closure</h4>
+          <p>After ceremony restoration is confirmed, the slashing exposure record is closed in the OCP governance log. The exposure duration and severity are recorded permanently for Verified Inference score history. The VI score degradation from the exposure period does not reverse instantly; it recovers over time per the network-layer VI score decay curve. The operator cannot request accelerated VI score recovery outside the normal network scoring timeline. The OCP health score does not carry a memory of past exposure into future scoring cycles: once in healthy tier after full recovery, past exposure does not penalize the current health score.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- APPENDIX -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num" style="background: var(--gray);">A</div>
+    <h2>Appendix: Reference Constants and Cross-Spec Integration</h2>
+  </div>
+
+  <div class="subsection">
+    <h3>A.1 Health Scoring Constants Summary</h3>
+    <table>
+      <tr><th>Constant</th><th>Value</th><th>Source</th></tr>
+      <tr><td>Scoring cycle interval</td><td>60 seconds (aligned with CRS cycle)</td><td>M3 Routing Logic</td></tr>
+      <tr><td>Telemetry heartbeat interval</td><td>30 seconds</td><td>M5 (this document)</td></tr>
+      <tr><td>Telemetry gap offline trigger</td><td>90 seconds (3 missed heartbeat cycles)</td><td>M3 Routing Logic (unchanged)</td></tr>
+      <tr><td>Healthy tier score range</td><td>80-100</td><td>M5 (this document)</td></tr>
+      <tr><td>Degraded tier score range</td><td>55-79</td><td>M5 (this document)</td></tr>
+      <tr><td>Critical tier score range</td><td>25-54</td><td>M5 (this document)</td></tr>
+      <tr><td>Offline tier score range</td><td>0-24</td><td>M5 (this document)</td></tr>
+      <tr><td>Degraded entry sustain window</td><td>2 consecutive cycles (2 minutes)</td><td>M5 (this document)</td></tr>
+      <tr><td>Degraded exit sustain window (recovery)</td><td>4 consecutive cycles (4 minutes)</td><td>M5 (this document)</td></tr>
+      <tr><td>Critical entry sustain window</td><td>2 consecutive cycles (2 minutes)</td><td>M5 (this document)</td></tr>
+      <tr><td>Critical exit sustain window (recovery)</td><td>6 consecutive cycles (6 minutes)</td><td>M5 (this document)</td></tr>
+      <tr><td>Offline entry sustain window</td><td>None: integrity fail and freshness = 0 are immediate</td><td>M5 (this document)</td></tr>
+      <tr><td>Pre-slashing warning window (critical)</td><td>60 minutes before slashing exposure activation</td><td>M5 (this document)</td></tr>
+      <tr><td>Network governance escalation threshold</td><td>120 minutes in critical tier</td><td>M5 (this document)</td></tr>
+      <tr><td>Degraded 10-minute P2 alert threshold</td><td>10 minutes of continuous degraded state</td><td>M5 (this document)</td></tr>
+      <tr><td>Maximum sustained penalty</td><td>30 points (cap)</td><td>M5 (this document)</td></tr>
+      <tr><td>Network stress modifier</td><td>1.05 (5% grace on individual penalties)</td><td>M5 (this document)</td></tr>
+      <tr><td>Operator layer weight in composite score</td><td>15% (operator adjustment contribution)</td><td>M5 (this document)</td></tr>
+      <tr><td>p95 latency critical threshold</td><td>400ms; consistent with M3 CRS failover trigger</td><td>M3 Routing Logic (unchanged)</td></tr>
+      <tr><td>VI score floor for CRS failover</td><td>0.60; unchanged from M3</td><td>M3 Routing Logic (unchanged)</td></tr>
+    </table>
+  </div>
+
+  <div class="appendix-grid">
+    <div class="appendix-card">
+      <h4>M3 Integration Points</h4>
+      <p>CRS cycle alignment (60s), p95 latency threshold (400ms), telemetry freshness input (10% CRS weight), failover SLA (30s from trigger to broadcast), 60% single-operator cap, 2-operator minimum. Health scoring does not replace CRS; it feeds additional inputs to OCP action triggers.</p>
+    </div>
+    <div class="appendix-card">
+      <h4>M5 Security Hardening Integration</h4>
+      <p>Binary integrity check result feeds NODE_INTEGRITY signal. Security incident rate feeds OP_INCIDENT_RATE signal. Isolation procedure activated on offline tier entry. Clearance sequence (Section 5.4 of Security Hardening spec) is the gate for ceremony restoration after critical or offline recovery.</p>
+    </div>
+    <div class="appendix-card">
+      <h4>Out of Scope</h4>
+      <p>Verified Inference score calculation mechanics (network layer; defined separately). On-chain slashing parameter values (network governance decision). OCP internal implementation architecture. Operator-side monitoring tooling recommendations.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>Post Fiat Superstructure Validator Platform: M5 Validator Telemetry and Health Scoring Framework, v1.0, March 2026</span>
+  <span>Classification: Operational Architecture Specification</span>
+</div>
+
+</body>
+</html>
